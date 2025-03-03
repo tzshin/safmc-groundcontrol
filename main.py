@@ -382,13 +382,13 @@ class ESPKenisisUI:
         if not target:
             return sg.Frame(f"Target {target_id}", [[sg.Text("No data available")]])
 
-        # Override switch
+        # Override button
         override_row = [
             sg.Text(f"Target {target_id} Control"),
-            sg.Switch(
+            sg.Button(
+                "Override: OFF",
                 key=f"-TARGET-{target_id}-OVERRIDE-",
                 enable_events=True,
-                text="Override",
             ),
             sg.Text("Status:"),
             sg.Text(target.status, key=f"-TARGET-{target_id}-STATUS-", size=(10, 1)),
@@ -607,16 +607,20 @@ class ESPKenisisUI:
             elif event.startswith("-TARGET-") and event.endswith("-OVERRIDE-"):
                 parts = event.split("-")
                 target_id = int(parts[2])
-                enable_override = values[event]
-
+                
                 target = self.manager.get_target(target_id)
                 if target:
-                    target.override_enabled = enable_override
-
+                    # Toggle the override state
+                    target.override_enabled = not target.override_enabled
+                    
+                    # Update button text
+                    btn_text = "Override: ON" if target.override_enabled else "Override: OFF"
+                    self.window[event].update(text=btn_text)
+                    
                     # Enable/disable channel controls
                     for ch_num in target.channels:
                         self.window[f"-TARGET-{target_id}-CH-{ch_num}-"].update(
-                            disabled=not enable_override
+                            disabled=not target.override_enabled
                         )
 
                     # Send updated data
